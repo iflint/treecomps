@@ -1,0 +1,244 @@
+<head>
+	<script src="https://d3js.org/d3.v5.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+	<div id='aboveTheFold'>
+		<div id='title'>
+			<h1>Tree Comps</h1>
+			<h3>Decision tree generated real estate comparables</h3>
+		</div>
+		<div id='map'></div>
+		<div class='emptySpace'></div>
+		<div id='parallel'></div>
+		<div class='emptySpace'></div>
+		<div id='tree'></div>
+	</div>
+	<div id='compTable'>
+		<div class="compTitle">
+			<div class='margin'></div>
+			<div class='col'>Price</div>
+			<div class='col'>Bedrooms</div>
+			<div class='col'>Bathrooms</div>
+			<div class='col'>Sqft_living</div>
+			<div class='col'>Sqft_lot</div>
+			<div class='col'>floors</div>
+			<div class='col'>waterfront</div>
+			<div class='col'>view</div>
+			<div class='col'>condition</div>
+			<div class='col'>grade</div>
+			<div class='margin'></div>
+		</div>
+	</div>
+
+	<script type="text/javascript">
+		const maph = document.getElementById('map').clientHeight
+		const mapw = document.getElementById('map').clientWidth
+
+		const map = d3.select('#map').append('svg')
+			.attr('width', mapw)
+			.attr('height', maph)
+			
+		const mapg = map.append('g')
+
+		const projection = d3.geoMercator().center([-122.5, 47.3]).scale(20000)
+		const path = d3.geoPath().projection(projection)
+		const zoom = d3.zoom().scaleExtent([1,12]).on('zoom', zoomed)
+		map.call(zoom)
+
+		function zoomed() {
+			mapg.selectAll('g').attr('transform', d3.event.transform)
+		}
+
+		d3.json('wastate.geojson').then(function(waSt) {
+			const state = mapg.append('g').attr('class','state')
+			state.selectAll('path')
+			.data(waSt.features)
+			.enter()
+			.append('path')
+			.attr('d', path)
+			.style('fill', 'none')
+			.style('stroke', 'black')
+		})
+
+		const m = {t:30, r:10, b:10, l:0}
+		const parh = document.getElementById('parallel').clientHeight - m.t - m.b
+		const parw = document.getElementById('parallel').clientWidth - m.l - m.r
+
+		const parallel = d3.select('#parallel').append('svg')
+			.attr('width', parw + m.l + m.r)
+			.attr('height', parh + m.t + m.b)
+			.append('g')
+				.attr('transform', 'translate('+m.l+','+m.t+')')
+
+		const treeh = document.getElementById('tree').clientHeight
+		const treew = document.getElementById('tree').clientWidth
+
+		const tree = d3.select('#tree').append('svg')
+			.attr('width', treew)
+			.attr('height', treeh)
+			.append('g')
+
+		const circleLevels = tree.append('g')
+			.attr('class', 'circleLevel')
+			.selectAll('circle')
+			.data([1,2,3,4,5,6,7,8,9,10].reverse())
+			.enter()
+			.append('circle')
+			.attr('cx', 200)
+			.attr('cy', 100)
+			.attr('r', d => d*10)
+			.style('stroke', 'black')
+			.style('fill', 'none')
+
+		const textLevels = tree.append('g')
+			.attr('class', 'textLevel')
+			.append('text')
+			.attr('x', 500)
+			.attr('y', 100)
+			.text("Click a point on the map to retrieve comparable properties")
+
+
+		d3.csv('newKc.csv').then(function(data) {
+
+			const colorS = d3.scaleSequential(d3.interpolateInferno)
+    			.domain([0, d3.max(data, d => d.price)])
+
+			const points = mapg.append('g')
+				.attr('class', 'point')
+				.selectAll('circle')
+				.data(data)
+				.enter()
+				.append('circle')
+				.attr('cx', d => projection([d.long, d.lat])[0])
+				.attr('cy', d => projection([d.long, d.lat])[1])
+				.attr('r', 1)
+				.style('fill', d => colorS(d.price))
+				.on('click', d => {
+					rules = d.path.substring(1, d.path.length-1).split(', ')
+					rulesClean = []
+					rules.forEach(r => {
+						rulesClean.push(r.substring(1, r.length-1).split('|'))
+					})
+
+					console.log(tree)
+					d3.selectAll('.textLevel').remove()
+					tree.append('g')
+						.attr('class', 'textLevel')
+						.selectAll('text')
+						.data(rulesClean)
+						.enter()
+						.append('text')
+						.attr('transform', (d, i) => 'translate('+(400+(i*40))+','+150+') rotate(-45)')
+						.text(d => {
+							if (d[1] == 'True') {
+								return d[0]+' >= '+d[2]
+							} else {
+								return d[0]+' <= '+d[2]
+							}
+						})
+						.on('click', (d, i) => {
+							circleLevels.style('stroke', (p, j) => i == j ? 'red' : 'black')
+							stop = false
+							filterRules = []
+							rulesClean.forEach(r => {
+								if (!stop) {filterRules.push(r)}
+								if (r == d) {stop = true}
+							})
+							comps = [...data]
+							filterRules.forEach(r => {
+								comps = comps.filter(c => {
+									if (r[1] == 'True') {
+										return c[r[0]] >= r[2]
+									} else {
+										return c[r[0]] <= r[2]
+									}
+								})
+							})
+
+							parallel.selectAll('path').remove()
+							parallel.selectAll('path')
+							    .data(comps)
+							    .enter().append("path")
+							    .attr('class', 'dataPath')
+							    .attr("d",  d => linepath(d))
+							    .style("fill", "none")
+							    .style("stroke", d => colorS(d.price))
+							    .style("opacity", 0.5)
+							parallel.selectAll("myAxis")
+							    .data(dimensions).enter()
+							    .append("g")
+							    .attr("transform", function(d) { return "translate(" + sX(d) + ")"; })
+							    .each(function(d) { d3.select(this).call(d3.axisLeft().scale(sY[d])); })
+							    .append("text")
+							      .style("text-anchor", "middle")
+							      .attr("y", -9)
+							      .text(function(d) { return d; })
+							      .style("fill", "black")
+
+							const compTable = d3.select('#compTable')
+							compTable.selectAll('div.compRow').remove()
+							compTable.selectAll('div.compRow')
+								.data(comps)
+								.enter()
+								.append('div')
+								.attr('class', 'compRow')
+								.each(function(c) {
+									d3.select(this).append('div').attr('class', 'margin')
+									d3.select(this).append('div').attr('class', 'col').text(c.price)
+									d3.select(this).append('div').attr('class', 'col').text(c.bedrooms)
+									d3.select(this).append('div').attr('class', 'col').text(c.bathrooms)
+									d3.select(this).append('div').attr('class', 'col').text(c.sqft_living)
+									d3.select(this).append('div').attr('class', 'col').text(c.sqft_lot)
+									d3.select(this).append('div').attr('class', 'col').text(c.floors)
+									d3.select(this).append('div').attr('class', 'col').text(c.waterfront)
+									d3.select(this).append('div').attr('class', 'col').text(c.view)
+									d3.select(this).append('div').attr('class', 'col').text(c.condition)
+									d3.select(this).append('div').attr('class', 'col').text(c.grade)
+									d3.select(this).append('div').attr('class', 'margin')
+								})
+
+						})
+				})
+
+			dimensions = d3.keys(data[0]).filter(function(d) { return ['bedrooms', 'bathrooms', 'sqft_living', 'sqft_lot', 'floors', 'waterfront', 'view', 'condition', 'grade'].includes(d) })
+			const sY = {}
+			for (i in dimensions) {
+				sY[dimensions[i]] = d3.scaleLinear()
+					.domain(d3.extent(data, d => +d[dimensions[i]]))
+					.range([parh, 0])
+			}
+			const sX = d3.scalePoint()
+				.range([0, parw])
+				.domain(dimensions)
+				.padding(1)
+
+			function linepath(d) {
+			    return d3.line()(dimensions.map( p => {
+			      	return [sX(p), sY[p](d[p])]
+			  	}))
+			}
+
+			parallel.selectAll('path')
+			    .data(data)
+			    .enter().append("path")
+			    .attr("d",  d => linepath(d))
+			    .style("fill", "none")
+			    .style("stroke", d => colorS(d.price))
+			    .style("opacity", 0.5)
+
+			parallel.selectAll("myAxis")
+			    .data(dimensions).enter()
+			    .append("g")
+			    .attr("transform", function(d) { return "translate(" + sX(d) + ")"; })
+			    .each(function(d) { d3.select(this).call(d3.axisLeft().scale(sY[d])); })
+			    .append("text")
+			      .style("text-anchor", "middle")
+			      .attr("y", -9)
+			      .text(function(d) { return d; })
+			      .style("fill", "black")
+
+
+		})
+	</script>
+</body>

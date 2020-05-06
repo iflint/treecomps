@@ -1,0 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@500&display=swap');
+body {
+	font-family: 'Josefin Sans', sans-serif;
+}
+#aboveTheFold {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	box-sizing: border-box;
+	padding: 20px;
+	border: solid 1px black;
+}
+#title {
+	flex: 2;
+}
+#title > * {
+	width: 100%;
+	text-align: center;
+}
+#map {
+	flex: 6;
+	width: 100%;
+}
+#parallel {
+	flex: 6;
+	width: 100%;
+}
+#tree {
+	flex: 6;
+	width: 100%;
+}
+.emptySpace {
+	flex: 1;
+}
+.compTitle {
+	display: flex;
+	flex-direction: row;
+	width: 100%;
+	margin-top: 10px;
+}
+.compRow {
+	display: flex;
+	flex-direction: row;
+	width: 100%;
+	margin-top: 10px;
+}
+.col {
+	flex: 2;
+}
+.margin {
+	flex: 1;
+}
