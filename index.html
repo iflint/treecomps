@@ -96,7 +96,7 @@
 			.append('text')
 			.attr('x', 500)
 			.attr('y', 100)
-			.text("Click a point on the map to retrieve comparable properties")
+			.text("Click a point on the map to retrieve comparable transactions")
 
 
 		d3.csv('newKc.csv').then(function(data) {
@@ -131,6 +131,7 @@
 					    .style("opacity", 0.5)
 
 					d3.select('#compTable').selectAll('div.compRow').remove()
+					tree.select('#compCount').remove()
 
 					console.log(rulesClean)
 					d3.selectAll('.textLevel').remove()
@@ -157,6 +158,7 @@
 								if (r == d) {stop = true}
 							})
 							comps = [...data]
+							compCountArray = []
 							filterRules.forEach(r => {
 								comps = comps.filter(c => {
 									if (r[1] == 'True') {
@@ -165,7 +167,16 @@
 										return c[r[0]] <= parseFloat(r[2])
 									}
 								})
+								compCountArray.push(comps.length)
 							})
+							console.log(compCountArray)
+
+							tree.select('#compCount').remove()
+							tree.append('text')
+								.attr('id', 'compCount')
+								.attr('x', 400)
+								.attr('y', 200)
+								.text(comps.length + ' comparable properties found')
 
 							const updateParallel = parallel.selectAll('path.dataPath').data(comps)
 							updateParallel.exit().remove()
@@ -198,7 +209,7 @@
 						})
 				})
 
-			dimensions = d3.keys(data[0]).filter(function(d) { return ['bedrooms', 'bathrooms', 'sqft_living', 'sqft_lot', 'floors', 'waterfront', 'view', 'condition', 'grade'].includes(d) })
+			dimensions = d3.keys(data[0]).filter(function(d) { return ['price', 'bedrooms', 'bathrooms', 'sqft_living', 'sqft_lot', 'floors', 'waterfront', 'view', 'condition', 'grade'].includes(d) })
 			const sY = {}
 			for (i in dimensions) {
 				sY[dimensions[i]] = d3.scaleLinear()
