@@ -121,7 +121,18 @@
 						rulesClean.push(r.substring(1, r.length-1).split('|'))
 					})
 
-					console.log(tree)
+					const resetParallel = parallel.selectAll('path.dataPath')
+					    .data(data)
+					resetParallel.enter().append('path')
+						.attr('class', 'dataPath')
+					    .attr("d",  d => linepath(d))
+					    .style("fill", "none")
+					    .style("stroke", d => colorS(d.price))
+					    .style("opacity", 0.5)
+
+					d3.select('#compTable').selectAll('div.compRow').remove()
+
+					console.log(rulesClean)
 					d3.selectAll('.textLevel').remove()
 					tree.append('g')
 						.attr('class', 'textLevel')
@@ -149,39 +160,25 @@
 							filterRules.forEach(r => {
 								comps = comps.filter(c => {
 									if (r[1] == 'True') {
-										return c[r[0]] >= r[2]
+										return c[r[0]] >= parseFloat(r[2])
 									} else {
-										return c[r[0]] <= r[2]
+										return c[r[0]] <= parseFloat(r[2])
 									}
 								})
 							})
 
-							parallel.selectAll('path').remove()
-							parallel.selectAll('path')
-							    .data(comps)
-							    .enter().append("path")
-							    .attr('class', 'dataPath')
+							const updateParallel = parallel.selectAll('path.dataPath').data(comps)
+							updateParallel.exit().remove()
+							updateParallel.enter().append('path')
+								.attr('class', 'dataPath')
 							    .attr("d",  d => linepath(d))
 							    .style("fill", "none")
 							    .style("stroke", d => colorS(d.price))
 							    .style("opacity", 0.5)
-							parallel.selectAll("myAxis")
-							    .data(dimensions).enter()
-							    .append("g")
-							    .attr("transform", function(d) { return "translate(" + sX(d) + ")"; })
-							    .each(function(d) { d3.select(this).call(d3.axisLeft().scale(sY[d])); })
-							    .append("text")
-							      .style("text-anchor", "middle")
-							      .attr("y", -9)
-							      .text(function(d) { return d; })
-							      .style("fill", "black")
 
-							const compTable = d3.select('#compTable')
-							compTable.selectAll('div.compRow').remove()
-							compTable.selectAll('div.compRow')
-								.data(comps)
-								.enter()
-								.append('div')
+							const compTable = d3.select('#compTable').selectAll('div.compRow').data(comps)
+							compTable.exit().remove()
+							compTable.enter().append('div')
 								.attr('class', 'compRow')
 								.each(function(c) {
 									d3.select(this).append('div').attr('class', 'margin')
@@ -219,13 +216,14 @@
 			  	}))
 			}
 
-			parallel.selectAll('path')
+			parallel.selectAll('path.dataPath')
 			    .data(data)
-			    .enter().append("path")
-			    .attr("d",  d => linepath(d))
-			    .style("fill", "none")
-			    .style("stroke", d => colorS(d.price))
-			    .style("opacity", 0.5)
+			    .enter().append('path')
+			    .attr('class', 'dataPath')
+			    .attr('d',  d => linepath(d))
+			    .style('fill', 'none')
+			    .style('stroke', d => colorS(d.price))
+			    .style('opacity', 0.5)
 
 			parallel.selectAll("myAxis")
 			    .data(dimensions).enter()
