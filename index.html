@@ -130,6 +130,18 @@
 					    .style("stroke", d => colorS(d.price))
 					    .style("opacity", 0.5)
 
+					parallel.selectAll("myAxis").remove()
+					parallel.selectAll("myAxis")
+					    .data(dimensions).enter()
+					    .append("g")
+					    .attr("transform", function(d) { return "translate(" + sX(d) + ")"; })
+					    .each(function(d) { d3.select(this).call(d3.axisLeft().scale(sY[d])); })
+					    .append("text")
+					      .style("text-anchor", "middle")
+					      .attr("y", -9)
+					      .text(function(d) { return d; })
+					      .style("fill", "black")
+
 					d3.select('#compTable').selectAll('div.compRow').remove()
 					tree.select('#compCount').remove()
 
@@ -186,6 +198,18 @@
 							    .style("fill", "none")
 							    .style("stroke", d => colorS(d.price))
 							    .style("opacity", 0.5)
+
+							parallel.selectAll("myAxis").remove()
+							parallel.selectAll("myAxis")
+							    .data(dimensions).enter()
+							    .append("g")
+							    .attr("transform", function(d) { return "translate(" + sX(d) + ")"; })
+							    .each(function(d) { d3.select(this).call(d3.axisLeft().scale(sY[d])); })
+							    .append("text")
+							      .style("text-anchor", "middle")
+							      .attr("y", -9)
+							      .text(function(d) { return d; })
+							      .style("fill", "black")
 
 							const compTable = d3.select('#compTable').selectAll('div.compRow').data(comps)
 							compTable.exit().remove()
