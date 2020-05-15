@@ -1,6 +1,8 @@
 # treecomps
 Decision tree generated real estate comparables (King County data)
 
+(Data processing and model implementation are located in the jupyter notebook file)
+
 Usage instructions:
 
 Run a python web server in the folder: "python3 -m http.server"
